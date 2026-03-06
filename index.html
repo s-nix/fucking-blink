@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLINK, ROSE!</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    h1 {
+      font-family: 'Bangers', cursive;
+      font-size: 3.5rem;
+      letter-spacing: 4px;
+      text-align: center;
+      background: linear-gradient(135deg, #ff6b6b, #ff2e63, #ff6b6b);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: #888;
+      text-align: center;
+    }
+
+    /* Timer */
+    .timer-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .timer-ring {
+      position: relative;
+      width: 180px;
+      height: 180px;
+    }
+
+    .timer-ring svg {
+      transform: rotate(-90deg);
+      width: 180px;
+      height: 180px;
+    }
+
+    .timer-ring .bg {
+      fill: none;
+      stroke: #1a1a2e;
+      stroke-width: 10;
+    }
+
+    .timer-ring .progress {
+      fill: none;
+      stroke: #ff2e63;
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 502;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.1s linear, stroke 0.3s;
+    }
+
+    .timer-ring .progress.warning {
+      stroke: #ff6b35;
+    }
+
+    .timer-ring .progress.danger {
+      stroke: #ff0040;
+    }
+
+    .timer-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #666;
+    }
+
+    /* Status */
+    .status {
+      font-size: 1.4rem;
+      font-weight: 700;
+      padding: 0.6rem 1.5rem;
+      border-radius: 50px;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .status.waiting {
+      background: rgba(255, 46, 99, 0.15);
+      color: #ff2e63;
+      border: 2px solid rgba(255, 46, 99, 0.3);
+    }
+
+    .status.good {
+      background: rgba(0, 255, 136, 0.15);
+      color: #00ff88;
+      border: 2px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .status.alert {
+      background: rgba(255, 0, 64, 0.25);
+      color: #ff4070;
+      border: 2px solid rgba(255, 0, 64, 0.5);
+      animation: pulse 0.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    /* Webcam */
+    .webcam-area {
+      position: relative;
+      width: 400px;
+      max-width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 3px solid #1a1a2e;
+      background: #111;
+      aspect-ratio: 4/3;
+    }
+
+    .webcam-area video,
+    .webcam-area canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .webcam-area canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .webcam-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .webcam-label .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff2e63;
+      animation: blink-dot 1s infinite;
+    }
+
+    .webcam-label .dot.active {
+      background: #00ff88;
+    }
+
+    @keyframes blink-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .ear-display {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: #aaa;
+    }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .stat-card {
+      background: #12121f;
+      border: 1px solid #1e1e35;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #ff2e63;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.7rem 1.8rem;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover { transform: translateY(-2px); }
+    button:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff2e63, #ff6b6b);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #1a1a2e;
+      color: #aaa;
+      border: 1px solid #2a2a45;
+    }
+
+    .btn-secondary:hover { color: #fff; border-color: #ff2e63; }
+
+    /* Blink overlay flash */
+    .flash-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: background 0.15s;
+    }
+
+    .flash-overlay.blink-good {
+      background: rgba(0, 255, 136, 0.12);
+    }
+
+    .flash-overlay.blink-bad {
+      background: rgba(255, 0, 64, 0.2);
+    }
+
+    /* Fullscreen alert */
+    .fullscreen-alert {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .fullscreen-alert.show {
+      display: flex;
+      animation: fade-in 0.2s;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .fullscreen-alert .big-text {
+      font-family: 'Bangers', cursive;
+      font-size: 6rem;
+      color: #ff2e63;
+      text-align: center;
+      animation: shake 0.3s ease-in-out infinite;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px) rotate(-1deg); }
+      75% { transform: translateX(8px) rotate(1deg); }
+    }
+
+    .fullscreen-alert .sub-text {
+      font-size: 1.3rem;
+      color: #999;
+    }
+
+    .camera-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #444;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .camera-placeholder svg {
+      width: 48px;
+      height: 48px;
+      fill: #333;
+    }
+  </style>
+</head>
+<body>
+
+<div class="flash-overlay" id="flashOverlay"></div>
+
+<div class="fullscreen-alert" id="fullscreenAlert">
+  <div class="big-text">BLINK, ROSE!!</div>
+  <div class="sub-text">Your eyes need moisture, girl 👁️</div>
+</div>
+
+<div class="container">
+  <h1>BLINK, ROSE!!</h1>
+  <p class="subtitle">A gentle (aggressive) reminder to blink every 5 seconds.</p>
+
+  <!-- Timer -->
+  <div class="timer-section">
+    <div class="timer-ring">
+      <svg viewBox="0 0 180 180">
+        <circle class="bg" cx="90" cy="90" r="80"/>
+        <circle class="progress" id="timerProgress" cx="90" cy="90" r="80"/>
+      </svg>
+      <div class="timer-text">
+        <span id="timerValue">5.0</span>
+        <span class="timer-label">seconds</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="status waiting" id="statusBadge">Waiting to start...</div>
+
+  <!-- Webcam -->
+  <div class="webcam-area" id="webcamArea">
+    <video id="webcamVideo" autoplay playsinline muted></video>
+    <canvas id="overlayCanvas"></canvas>
+    <div class="webcam-label">
+      <span class="dot" id="camDot"></span>
+      <span id="camLabel">Camera off</span>
+    </div>
+    <div class="ear-display" id="earDisplay">EAR: —</div>
+    <div class="camera-placeholder" id="cameraPlaceholder">
+      <svg viewBox="0 0 24 24"><path d="M12 15.2q1.12 0 1.96-.84.84-.84.84-1.96t-.84-1.96Q13.12 9.6 12 9.6t-1.96.84q-.84.84-.84 1.96t.84 1.96q.84.84 1.96.84Zm-8-10v13h16v-13H4Zm8 11q-2.08 0-3.54-1.46Q7 13.28 7 11.2t1.46-3.54Q9.92 6.2 12 6.2t3.54 1.46Q17 9.12 17 11.2t-1.46 3.54Q14.08 16.2 12 16.2Z"/></svg>
+      <span>Click "Start Camera" below</span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-value" id="blinkCount">0</div>
+      <div class="stat-label">Blinks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="missedCount">0</div>
+      <div class="stat-label">Missed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="blinkRate">0</div>
+      <div class="stat-label">Blinks/min</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn-primary" id="btnCamera" onclick="toggleCamera()">Start Camera</button>
+    <button class="btn-primary" id="btnTimer" onclick="toggleTimer()">Start Timer</button>
+    <button class="btn-secondary" onclick="resetStats()">Reset Stats</button>
+    <button class="btn-secondary" id="btnSound" onclick="toggleSound()">🔊 Sound On</button>
+  </div>
+</div>
+
+<!-- MediaPipe Face Mesh -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+<script>
+// ─── State ───
+let timerRunning = false;
+let cameraRunning = false;
+let soundEnabled = true;
+let timeLeft = 5.0;
+let timerInterval = null;
+let blinks = 0;
+let missed = 0;
+let startTime = null;
+let blinkedInCycle = false;
+let faceMesh = null;
+let mpCamera = null;
+let lastEAR = 0.3;
+let blinkCooldown = false;
+let eyesClosed = false;
+
+// EAR threshold — tune if needed
+const EAR_THRESHOLD = 0.22;
+const CIRCUMFERENCE = 2 * Math.PI * 80; // ~502
+
+// DOM
+const timerValue = document.getElementById('timerValue');
+const timerProgress = document.getElementById('timerProgress');
+const statusBadge = document.getElementById('statusBadge');
+const flashOverlay = document.getElementById('flashOverlay');
+const fullscreenAlert = document.getElementById('fullscreenAlert');
+const blinkCountEl = document.getElementById('blinkCount');
+const missedCountEl = document.getElementById('missedCount');
+const blinkRateEl = document.getElementById('blinkRate');
+const video = document.getElementById('webcamVideo');
+const canvas = document.getElementById('overlayCanvas');
+const ctx = canvas.getContext('2d');
+const camDot = document.getElementById('camDot');
+const camLabel = document.getElementById('camLabel');
+const earDisplay = document.getElementById('earDisplay');
+const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+const btnCamera = document.getElementById('btnCamera');
+const btnTimer = document.getElementById('btnTimer');
+const btnSound = document.getElementById('btnSound');
+
+timerProgress.style.strokeDasharray = CIRCUMFERENCE;
+timerProgress.style.strokeDashoffset = '0';
+
+// ─── Audio ───
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playBeep(freq = 880, duration = 0.15, volume = 0.3) {
+  if (!soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value = freq;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playAlarm() {
+  if (!soundEnabled) return;
+  playBeep(660, 0.12, 0.4);
+  setTimeout(() => playBeep(880, 0.12, 0.4), 140);
+  setTimeout(() => playBeep(1100, 0.2, 0.5), 280);
+}
+
+// ─── Timer ───
+function toggleTimer() {
+  if (timerRunning) {
+    stopTimer();
+  } else {
+    startTimer();
+  }
+}
+
+function startTimer() {
+  timerRunning = true;
+  startTime = startTime || Date.now();
+  timeLeft = 5.0;
+  blinkedInCycle = false;
+  btnTimer.textContent = 'Stop Timer';
+  setStatus('waiting', '👀 Watching...');
+  timerInterval = setInterval(tick, 50);
+}
+
+function stopTimer() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timeLeft = 5.0;
+  updateTimerDisplay();
+  btnTimer.textContent = 'Start Timer';
+  setStatus('waiting', 'Paused');
+  fullscreenAlert.classList.remove('show');
+}
+
+function tick() {
+  timeLeft -= 0.05;
+  if (timeLeft <= 0) {
+    // Cycle ended
+    if (!blinkedInCycle && cameraRunning) {
+      missed++;
+      missedCountEl.textContent = missed;
+      playAlarm();
+      flashScreen('blink-bad');
+      fullscreenAlert.classList.add('show');
+      setStatus('alert', '🚨 FUCKING BLINK, ROSE!!');
+      setTimeout(() => fullscreenAlert.classList.remove('show'), 1800);
+    } else if (!cameraRunning) {
+      // No camera — just remind
+      playBeep(660, 0.1, 0.25);
+      flashScreen('blink-bad');
+      setStatus('alert', '⏰ TIME TO FUCKING BLINK, ROSE!');
+    }
+    timeLeft = 5.0;
+    blinkedInCycle = false;
+    if (blinkedInCycle === false && cameraRunning) {
+      // reset status after showing alert
+      setTimeout(() => {
+        if (timerRunning) setStatus('waiting', '👀 Watching...');
+      }, 1200);
+    }
+  }
+  updateTimerDisplay();
+  updateBlinkRate();
+}
+
+function updateTimerDisplay() {
+  const display = Math.max(0, timeLeft).toFixed(1);
+  timerValue.textContent = display;
+
+  const fraction = timeLeft / 5.0;
+  const offset = CIRCUMFERENCE * (1 - fraction);
+  timerProgress.style.strokeDashoffset = offset;
+
+  // Color changes
+  timerProgress.classList.remove('warning', 'danger');
+  if (fraction <= 0.2) {
+    timerProgress.classList.add('danger');
+  } else if (fraction <= 0.4) {
+    timerProgress.classList.add('warning');
+  }
+}
+
+// ─── Status ───
+function setStatus(type, text) {
+  statusBadge.className = 'status ' + type;
+  statusBadge.textContent = text;
+}
+
+// ─── Flash ───
+function flashScreen(cls) {
+  flashOverlay.className = 'flash-overlay ' + cls;
+  setTimeout(() => flashOverlay.className = 'flash-overlay', 300);
+}
+
+// ─── Stats ───
+function resetStats() {
+  blinks = 0;
+  missed = 0;
+  startTime = timerRunning ? Date.now() : null;
+  blinkCountEl.textContent = '0';
+  missedCountEl.textContent = '0';
+  blinkRateEl.textContent = '0';
+}
+
+function updateBlinkRate() {
+  if (!startTime) return;
+  const elapsed = (Date.now() - startTime) / 60000; // minutes
+  if (elapsed > 0.05) {
+    blinkRateEl.textContent = Math.round(blinks / elapsed);
+  }
+}
+
+// ─── Camera & Blink Detection ───
+async function toggleCamera() {
+  if (cameraRunning) {
+    stopCamera();
+  } else {
+    await startCamera();
+  }
+}
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 480, facingMode: 'user' }
+    });
+    video.srcObject = stream;
+    video.style.display = 'block';
+    cameraPlaceholder.style.display = 'none';
+    canvas.width = 640;
+    canvas.height = 480;
+
+    camDot.classList.add('active');
+    camLabel.textContent = 'Loading model...';
+    btnCamera.textContent = 'Stop Camera';
+    cameraRunning = true;
+
+    // Init FaceMesh
+    faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    faceMesh.onResults(onFaceMeshResults);
+
+    mpCamera = new Camera(video, {
+      onFrame: async () => {
+        await faceMesh.send({ image: video });
+      },
+      width: 640,
+      height: 480
+    });
+
+    mpCamera.start();
+    camLabel.textContent = 'Detecting...';
+  } catch (err) {
+    console.error('Camera error:', err);
+    alert('Could not access camera. Please allow camera access and try again.');
+  }
+}
+
+function stopCamera() {
+  cameraRunning = false;
+  if (mpCamera) { mpCamera.stop(); mpCamera = null; }
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+  }
+  video.style.display = 'none';
+  cameraPlaceholder.style.display = 'flex';
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  camDot.classList.remove('active');
+  camLabel.textContent = 'Camera off';
+  earDisplay.textContent = 'EAR: —';
+  btnCamera.textContent = 'Start Camera';
+}
+
+// ─── Eye Aspect Ratio ───
+// Using MediaPipe FaceMesh 468+ landmark indices
+// Right eye: 33, 160, 158, 133, 153, 144
+// Left eye: 362, 385, 387, 263, 373, 380
+function dist(a, b) {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+function eyeAspectRatio(landmarks, indices) {
+  const [p1, p2, p3, p4, p5, p6] = indices.map(i => landmarks[i]);
+  const vertical1 = dist(p2, p6);
+  const vertical2 = dist(p3, p5);
+  const horizontal = dist(p1, p4);
+  return (vertical1 + vertical2) / (2.0 * horizontal);
+}
+
+const RIGHT_EYE = [33, 160, 158, 133, 153, 144];
+const LEFT_EYE = [362, 385, 387, 263, 373, 380];
+
+// Eye contour indices for drawing
+const RIGHT_EYE_CONTOUR = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246];
+const LEFT_EYE_CONTOUR = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398];
+
+function onFaceMeshResults(results) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+    earDisplay.textContent = 'EAR: no face';
+    return;
+  }
+
+  const landmarks = results.multiFaceLandmarks[0];
+
+  // Draw eye contours
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 2;
+  drawEyeContour(landmarks, RIGHT_EYE_CONTOUR);
+  drawEyeContour(landmarks, LEFT_EYE_CONTOUR);
+
+  // Calculate EAR
+  const earRight = eyeAspectRatio(landmarks, RIGHT_EYE);
+  const earLeft = eyeAspectRatio(landmarks, LEFT_EYE);
+  const ear = (earRight + earLeft) / 2.0;
+  lastEAR = ear;
+
+  earDisplay.textContent = `EAR: ${ear.toFixed(3)}`;
+
+  // Blink detection
+  if (ear < EAR_THRESHOLD) {
+    if (!eyesClosed) {
+      eyesClosed = true;
+    }
+  } else {
+    if (eyesClosed) {
+      // Blink just completed (eyes reopened)
+      eyesClosed = false;
+      registerBlink();
+    }
+  }
+}
+
+function drawEyeContour(landmarks, indices) {
+  ctx.beginPath();
+  const first = landmarks[indices[0]];
+  ctx.moveTo(first.x * canvas.width, first.y * canvas.height);
+  for (let i = 1; i < indices.length; i++) {
+    const pt = landmarks[indices[i]];
+    ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
+  }
+  ctx.closePath();
+  ctx.stroke();
+}
+
+function registerBlink() {
+  blinks++;
+  blinkCountEl.textContent = blinks;
+  blinkedInCycle = true;
+
+  if (timerRunning) {
+    setStatus('good', '✅ Good blink, Rose!');
+    flashScreen('blink-good');
+    playBeep(1200, 0.08, 0.15);
+    setTimeout(() => {
+      if (timerRunning && statusBadge.textContent.includes('Good')) {
+        setStatus('waiting', '👀 Watching...');
+      }
+    }, 1000);
+  }
+}
+
+// ─── Sound Toggle ───
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  btnSound.textContent = soundEnabled ? '🔊 Sound On' : '🔇 Sound Off';
+}
+</script>
+</body>
+</html>
